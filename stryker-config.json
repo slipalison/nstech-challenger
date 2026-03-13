@@ -1,0 +1,24 @@
+﻿{
+  "stryker-config": {
+    "project": "NsTech.Application.csproj",
+    "test-projects": [
+      "tests/NsTech.Tests/NsTech.Tests.csproj"
+    ],
+    "mutate": [
+      "src/NsTech.Application/**/*.cs",
+      "src/NsTech.Domain/**/*.cs"
+    ],
+    "reporters": [
+      "cleartext",
+      "progress",
+      "html",
+      "Markdown"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    },
+    "concurrency": 2
+  }
+}
