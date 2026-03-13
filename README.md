@@ -2,76 +2,127 @@
 
 Este é um serviço de gestão de pedidos com itens e validação de estoque, desenvolvido como parte de um teste técnico para Arquiteto Backend Sênior.
 
-## Tecnologias
-- .NET 10
-- ASP.NET Minimal API
-- EF Core com PostgreSQL
-- MediatR (CQRS/Vertical Slices)
-- FluentValidation
-- JWT Authentication
-- xUnit & FluentAssertions
-- Docker & Docker Compose
+## 🏛️ Arquitetura do Sistema
 
-## Estrutura do Projeto
-O projeto segue uma arquitetura limpa separada em:
-- **Domain**: Entidades, Enums e Interfaces de Repositório.
-- **Application**: Lógica de negócio organizada por Features (Vertical Slices) usando MediatR.
-- **Infrastructure**: Implementação do EF Core, Repositórios e Configurações de Banco.
-- **Api**: Endpoints Minimal API e configurações de Middleware.
+A solução foi desenvolvida seguindo os princípios da **Clean Architecture** e organizada internamente por **Vertical Slices**. Isso permite uma separação clara de responsabilidades, facilitando a manutenção e garantindo que cada funcionalidade (slice) contenha toda a lógica necessária para sua execução.
 
-## Como Executar
+### Visão Geral da Arquitetura (Mermaid)
 
-### Via Docker (Recomendado)
+```mermaid
+graph TD
+    subgraph Client
+        API_Client[REST Client / HTTP]
+    end
+
+    subgraph API_Layer [NsTech.Api]
+        Endpoints[Minimal API Endpoints]
+        Middleware[Exception Handling / Auth Middleware]
+    end
+
+    subgraph Application_Layer [NsTech.Application]
+        Features[Vertical Slices: Orders, Products]
+        Handlers[MediatR Handlers]
+        Validators[FluentValidation]
+    end
+
+    subgraph Domain_Layer [NsTech.Domain]
+        Entities[Entities: Order, Product, OrderItem]
+        Enums[Enums: OrderStatus]
+        Interfaces[Repository Interfaces]
+    end
+
+    subgraph Infrastructure_Layer [NsTech.Infrastructure]
+        EFCore[EF Core - AppDbContext]
+        Repos[Repositories]
+        Migrations[Migrations]
+        Seeding[DbInitializer]
+    end
+
+    subgraph Persistence
+        DB[(PostgreSQL)]
+    end
+
+    API_Client --> Endpoints
+    Endpoints --> Handlers
+    Handlers --> Entities
+    Handlers --> Repos
+    Repos --> EFCore
+    EFCore --> DB
+```
+
+## 🚀 Como Executar
+
+### 🐳 Via Docker (Recomendado)
 Certifique-se de ter o Docker instalado e execute:
 ```bash
 docker compose up --build
 ```
-A API estará disponível em `http://localhost:8080`.
+A API estará disponível em `http://localhost:8080`. O Swagger pode ser acessado em `http://localhost:8080/swagger/index.html`.
 
-### Localmente
-1. Tenha um PostgreSQL rodando.
+### 💻 Localmente
+1. Tenha um **PostgreSQL** rodando.
 2. Configure a connection string em `src/NsTech.Api/appsettings.json`.
-3. Execute as migrações:
-```bash
-dotnet ef database update --project src/NsTech.Infrastructure --startup-project src/NsTech.Api
-```
-4. Rode a aplicação:
-```bash
-dotnet run --project src/NsTech.Api
-```
+3. Instale a ferramenta `dotnet-ef`:
+   ```bash
+   dotnet new tool-manifest
+   dotnet tool install dotnet-ef
+   ```
+4. Execute as migrações:
+   ```bash
+   dotnet tool run dotnet-ef database update --project src/NsTech.Infrastructure --startup-project src/NsTech.Api
+   ```
+5. Rode a aplicação:
+   ```bash
+   dotnet run --project src/NsTech.Api
+   ```
 
-## Como Testar
-Para rodar os testes unitários e garantir a cobertura:
+## 🧪 Como Testar
+
+Para rodar a suíte completa de testes (Unitários e Integração):
 ```bash
 dotnet test
 ```
 
-## Decisões Técnicas
+Para gerar cobertura de testes (requer `coverlet.collector`):
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+```
 
-### 1. Estratégia de Concorrência
-Para evitar estoque negativo e inconsistências em ambientes de alta concorrência, foi adotado o **Controle de Concorrência Otimista**.
-- A entidade `Product` possui uma propriedade `Version` (mapeada para a coluna de sistema `xmin` no PostgreSQL).
-- Quando o estoque é reservado (na confirmação do pedido), o EF Core valida se a versão do produto não foi alterada desde a leitura.
-- Em caso de conflito, a API retorna um status `409 Conflict`.
+## 🛠️ Tecnologias e Padrões
+- **.NET 10** e C# 14.
+- **Minimal APIs** para endpoints performáticos.
+- **EF Core** com PostgreSQL e Migrations.
+- **MediatR** para desacoplamento e implementação de CQRS.
+- **FluentValidation** para validação de inputs (Fail-fast).
+- **JWT Authentication** para segurança dos endpoints.
+- **xUnit, FluentAssertions, Moq** para testes robustos.
+- **Docker & Docker Compose** para orquestração.
+
+## 📝 Decisões Técnicas
+
+### 1. Concorrência e Estoque
+Para garantir que não haja estoque negativo sob alta concorrência, implementamos **Optimistic Concurrency Control**.
+- A entidade `Product` usa o campo `xmin` do PostgreSQL via EF Core (`IsRowVersion`).
+- Na confirmação do pedido, se o produto foi alterado por outra instância, uma `DbUpdateConcurrencyException` é lançada e tratada, garantindo a integridade dos dados.
 
 ### 2. Idempotência
-Os endpoints de **Confirmação** e **Cancelamento** de pedido são idempotentes. No domínio, as entidades validam o estado atual antes de aplicar a transição. Se o pedido já estiver no estado desejado, a operação retorna sucesso sem erro e sem repetir os efeitos colaterais (como liberação/reserva de estoque).
+Os fluxos de **Confirmação** e **Cancelamento** de pedidos validam o estado atual no domínio.
+- Se uma operação é repetida e o pedido já está no estado final esperado, o sistema retorna `204 No Content` sem reaplicar lógica de negócio ou alterar o banco, garantindo o mesmo resultado final (idempotência).
 
-### 3. Vertical Slices
-A camada de `Application` foi organizada por features. Cada feature contém seu Command/Query e Handler, facilitando a manutenção e a escalabilidade do sistema.
+### 3. Vertical Slices e SRP
+A aplicação foi organizada em `Features`. Cada pasta (ex: `CreateOrder`) contém seu próprio comando, handler e lógica específica. Isso segue o **Single Responsibility Principle (SRP)** em nível de módulo, evitando "God Classes" e facilitando a navegação.
 
-### 4. Autenticação JWT
-A API está protegida por JWT. Para obter um token de teste (demo), use as credenciais:
-- **User**: `admin`
-- **Password**: `admin`
-No endpoint `POST /auth/token?username=admin&password=admin`.
+### 4. Seed de Dados
+No ambiente de `Development`, o sistema executa automaticamente um seed de 10 produtos iniciais através da classe `DbInitializer`, garantindo que o ambiente esteja pronto para uso imediato.
 
-## Endpoints Principais
-- `POST /auth/token`: Gera token JWT.
-- `POST /orders`: Cria um novo pedido (status Placed).
-- `POST /orders/{id}/confirm`: Confirma o pedido e reserva estoque.
-- `POST /orders/{id}/cancel`: Cancela o pedido e libera estoque.
-- `GET /orders/{id}`: Detalhes do pedido.
-- `GET /orders`: Listagem paginada com filtros.
-- `POST /products`: Cadastro de produtos (CRUD).
-- `GET /products`: Listagem de produtos.
+## 🔒 Segurança (JWT)
+Para acessar endpoints protegidos:
+1. Obtenha o token: `POST /auth/token` com `username: admin` e `password: admin`.
+2. Adicione o header: `Authorization: Bearer <seu-token>`.
+
+## 📂 Arquivo .http
+Na raiz do projeto, encontra-se o arquivo `NsTech.http`. Ele contém chamadas prontas para testar todos os endpoints, incluindo fluxos de sucesso, erro e validações de idempotência.
+
+---
+**Candidato:** Arquiteto Backend Sênior
+**Projeto:** NsTech Order Service

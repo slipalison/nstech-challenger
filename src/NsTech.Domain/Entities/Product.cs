@@ -7,8 +7,7 @@ public class Product
     public decimal UnitPrice { get; private set; }
     public int AvailableQuantity { get; private set; }
     public uint Version { get; private set; }
-
-    // Construtor privado para EF Core
+    
     private Product() { }
 
     public Product(Guid id, string name, decimal unitPrice, int availableQuantity)

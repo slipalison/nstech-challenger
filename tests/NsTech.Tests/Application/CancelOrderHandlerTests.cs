@@ -5,7 +5,6 @@ using NsTech.Domain.Entities;
 using NsTech.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NsTech.Domain.Enums;
-using Xunit;
 
 namespace NsTech.Tests.Application;
 
