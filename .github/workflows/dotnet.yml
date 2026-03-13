@@ -30,7 +30,7 @@ jobs:
       run: dotnet test --configuration Release --no-restore --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory ./TestResults
 
     - name: Mutation Test
-      run: dotnet stryker --configuration Release --no-restore
+      run: dotnet stryker --configuration Release
 
     - name: Mutation Summary
       if: always()
