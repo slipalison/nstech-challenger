@@ -88,6 +88,12 @@ Para gerar cobertura de testes (requer `coverlet.collector`):
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
+### 🤖 CI/CD (GitHub Actions)
+O projeto possui um pipeline automatizado via **GitHub Actions** configurado em `.github/workflows/dotnet.yml`.
+- **Build**: Compilação automática em cada Push ou Pull Request.
+- **Tests**: Execução de todos os testes unitários e de integração.
+- **Coverage**: Validação de cobertura mínima de **80%**. O pipeline falha se a cobertura for inferior a esse limite.
+
 ## 🛠️ Tecnologias e Padrões
 - **.NET 10** e C# 14.
 - **Minimal APIs** para endpoints performáticos.
