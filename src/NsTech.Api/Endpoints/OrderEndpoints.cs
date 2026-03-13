@@ -15,23 +15,38 @@ public static class OrderEndpoints
             .WithTags("Orders")
             .RequireAuthorization();
 
-        orders.MapPost("/", CreateOrder)
-            .WithName("CreateOrder")
-            .WithSummary("Cria um novo pedido")
-            .WithDescription("Processa a criação de um pedido para um cliente e lista de produtos.")
-            .Produces<Guid>(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+        ConfigureCreateOrderEndpoint(orders);
 
-        orders.MapPost("/{id:guid}/confirm", ConfirmOrder)
-            .WithName("ConfirmOrder")
-            .WithSummary("Confirma um pedido")
-            .WithDescription("Altera o status do pedido para 'Confirmed'.")
-            .Produces(StatusCodes.Status204NoContent)
+        ConfigureOrderConfirmation(orders);
+
+        ConfigureCancelOrderRoute(orders);
+
+        ConfigureGetOrderRoute(orders);
+
+        ConfigureListOrdersRoute(orders);
+    }
+
+    private static void ConfigureListOrdersRoute(RouteGroupBuilder orders)
+    {
+        orders.MapGet("/", ListOrders)
+            .WithName("ListOrders")
+            .WithSummary("Lista pedidos com filtros")
+            .Produces<ListOrdersResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+    }
+
+    private static void ConfigureGetOrderRoute(RouteGroupBuilder orders)
+    {
+        orders.MapGet("/{id:guid}", GetOrder)
+            .WithName("GetOrder")
+            .WithSummary("Obtém detalhes de um pedido")
+            .Produces<OrderResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status409Conflict)
             .Produces(StatusCodes.Status401Unauthorized);
+    }
 
+    private static void ConfigureCancelOrderRoute(RouteGroupBuilder orders)
+    {
         orders.MapPost("/{id:guid}/cancel", CancelOrder)
             .WithName("CancelOrder")
             .WithSummary("Cancela um pedido")
@@ -40,18 +55,28 @@ public static class OrderEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict)
             .Produces(StatusCodes.Status401Unauthorized);
+    }
 
-        orders.MapGet("/{id:guid}", GetOrder)
-            .WithName("GetOrder")
-            .WithSummary("Obtém detalhes de um pedido")
-            .Produces<OrderResponse>(StatusCodes.Status200OK)
+    private static void ConfigureOrderConfirmation(RouteGroupBuilder orders)
+    {
+        orders.MapPost("/{id:guid}/confirm", ConfirmOrder)
+            .WithName("ConfirmOrder")
+            .WithSummary("Confirma um pedido")
+            .WithDescription("Altera o status do pedido para 'Confirmed'.")
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict)
             .Produces(StatusCodes.Status401Unauthorized);
+    }
 
-        orders.MapGet("/", ListOrders)
-            .WithName("ListOrders")
-            .WithSummary("Lista pedidos com filtros")
-            .Produces<ListOrdersResponse>(StatusCodes.Status200OK)
+    private static void ConfigureCreateOrderEndpoint(RouteGroupBuilder orders)
+    {
+        orders.MapPost("/", CreateOrder)
+            .WithName("CreateOrder")
+            .WithSummary("Cria um novo pedido")
+            .WithDescription("Processa a criação de um pedido para um cliente e lista de produtos.")
+            .Produces<Guid>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
     }
 
