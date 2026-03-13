@@ -4,7 +4,14 @@ using NsTech.Domain.Enums;
 
 namespace NsTech.Application.Features.Orders.GetOrder;
 
+/// <summary>
+/// Informações de um item do pedido.
+/// </summary>
 public record OrderItemResponse(Guid ProductId, decimal UnitPrice, int Quantity);
+
+/// <summary>
+/// Detalhes do pedido.
+/// </summary>
 public record OrderResponse(Guid Id, string CustomerId, OrderStatus Status, string Currency, decimal Total, DateTime CreatedAt, List<OrderItemResponse> Items);
 
 public record GetOrderQuery(Guid Id) : IRequest<OrderResponse?>;

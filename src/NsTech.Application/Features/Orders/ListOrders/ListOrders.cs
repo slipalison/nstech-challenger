@@ -5,8 +5,14 @@ using NsTech.Domain.Enums;
 
 namespace NsTech.Application.Features.Orders.ListOrders;
 
+/// <summary>
+/// Resposta com a lista de pedidos paginada.
+/// </summary>
 public record ListOrdersResponse(IEnumerable<OrderResponse> Items, int TotalCount, int Page, int PageSize);
 
+/// <summary>
+/// Consulta para listar pedidos com filtros e paginação.
+/// </summary>
 public record ListOrdersQuery(
     string? CustomerId = null,
     OrderStatus? Status = null,

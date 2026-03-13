@@ -9,7 +9,14 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app, IConfiguration configuration)
     {
-        app.MapPost("/auth/token", Login).AllowAnonymous();
+        app.MapPost("/auth/token", Login)
+            .AllowAnonymous()
+            .WithTags("Auth")
+            .WithName("Login")
+            .WithSummary("Gera um token JWT")
+            .WithDescription("Autenticação simples com username 'admin' e password 'admin' para fins de teste.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 
     private static IResult Login(string username, string password, IConfiguration configuration)

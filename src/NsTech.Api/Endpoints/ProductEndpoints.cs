@@ -8,10 +8,21 @@ public static class ProductEndpoints
 {
     public static void MapProductEndpoints(this IEndpointRouteBuilder app)
     {
-        var products = app.MapGroup("/products").RequireAuthorization();
+        var products = app.MapGroup("/products")
+            .WithTags("Products")
+            .RequireAuthorization();
 
-        products.MapPost("/", CreateProduct);
-        products.MapGet("/", ListProducts);
+        products.MapPost("/", CreateProduct)
+            .WithName("CreateProduct")
+            .WithSummary("Cadastra um novo produto")
+            .Produces<Guid>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        products.MapGet("/", ListProducts)
+            .WithName("ListProducts")
+            .WithSummary("Lista todos os produtos")
+            .Produces<IEnumerable<ProductResponse>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 
     private static async Task<IResult> CreateProduct(CreateProductCommand command, IMediator mediator)
