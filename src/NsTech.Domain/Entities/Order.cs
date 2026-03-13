@@ -1,4 +1,4 @@
-ï»¿using NsTech.Domain.Enums;
+using NsTech.Domain.Enums;
 
 namespace NsTech.Domain.Entities;
 
@@ -13,14 +13,16 @@ public class Order
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
     public decimal Total { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public uint Version { get; private set; }
+    public string? IdempotencyKey { get; private set; }
 
     // Construtor privado para EF Core
     private Order() { }
 
-    public Order(Guid id, string customerId, string currency, List<OrderItem> items)
+    public Order(Guid id, string customerId, string currency, List<OrderItem> items, string? idempotencyKey = null)
     {
-        if (string.IsNullOrWhiteSpace(customerId)) throw new ArgumentException("Cliente Ã© obrigatÃ³rio.");
-        if (string.IsNullOrWhiteSpace(currency)) throw new ArgumentException("Moeda Ã© obrigatÃ³ria.");
+        if (string.IsNullOrWhiteSpace(customerId)) throw new ArgumentException("Cliente é obrigatório.");
+        if (string.IsNullOrWhiteSpace(currency)) throw new ArgumentException("Moeda é obrigatória.");
         if (items == null || items.Count == 0) throw new ArgumentException("Pedido deve ter pelo menos um item.");
 
         Id = id;
@@ -30,6 +32,7 @@ public class Order
         Status = OrderStatus.Placed;
         CreatedAt = DateTime.UtcNow;
         RecalculateTotal();
+        IdempotencyKey = idempotencyKey;
     }
 
     public void RecalculateTotal()
@@ -42,7 +45,7 @@ public class Order
         if (Status == OrderStatus.Confirmed) return; // Idempotente
         
         if (Status != OrderStatus.Placed)
-            throw new InvalidOperationException($"NÃ£o Ã© possÃ­vel confirmar um pedido no estado {Status}.");
+            throw new InvalidOperationException($"Não é possível confirmar um pedido no estado {Status}.");
 
         Status = OrderStatus.Confirmed;
     }
@@ -52,7 +55,7 @@ public class Order
         if (Status == OrderStatus.Canceled) return; // Idempotente
 
         if (Status != OrderStatus.Placed && Status != OrderStatus.Confirmed)
-            throw new InvalidOperationException($"NÃ£o Ã© possÃ­vel cancelar um pedido no estado {Status}.");
+            throw new InvalidOperationException($"Não é possível cancelar um pedido no estado {Status}.");
 
         Status = OrderStatus.Canceled;
     }

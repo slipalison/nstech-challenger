@@ -2,6 +2,8 @@
 using NsTech.Domain.Interfaces;
 using NsTech.Domain.Enums;
 
+using Microsoft.EntityFrameworkCore;
+
 namespace NsTech.Application.Features.Orders.CancelOrder;
 
 public record CancelOrderCommand(Guid OrderId) : IRequest<bool>;
@@ -38,7 +40,19 @@ public class CancelOrderHandler(
             }
         }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Idempotência concorrente
+            var reloadedOrder = await orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+            if (reloadedOrder?.Status == OrderStatus.Canceled)
+                return true;
+
+            throw new InvalidOperationException("Conflito de concorrência ao cancelar pedido. Tente novamente.");
+        }
 
         return true;
     }

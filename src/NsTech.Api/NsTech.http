@@ -36,8 +36,8 @@ Content-Type: application/json
 
 {
   "name": "Novo Produto HTTP",
-  "price": 99.99,
-  "stock": 100
+  "unitPrice": 99.99,
+  "AvailableQuantity": 100
 }
 
 > {%

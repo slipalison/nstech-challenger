@@ -23,6 +23,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.Total).HasPrecision(18, 2);
         builder.Property(x => x.CustomerId).IsRequired();
         builder.Property(x => x.Currency).IsRequired();
+        builder.Property(x => x.Version).IsRowVersion();
         
         builder.HasMany(x => x.Items)
             .WithOne()

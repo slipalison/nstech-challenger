@@ -14,7 +14,10 @@ public class ProductTests
 
         // Price
         var act2 = () => new Product(Guid.NewGuid(), "Test", -1, 10);
-        act2.Should().Throw<ArgumentException>();
+        act2.Should().Throw<ArgumentException>().WithMessage("Preço deve ser maior que zero.");
+
+        var actZeroPrice = () => new Product(Guid.NewGuid(), "Test", 0, 10);
+        actZeroPrice.Should().Throw<ArgumentException>().WithMessage("Preço deve ser maior que zero.");
 
         // Stock
         var act3 = () => new Product(Guid.NewGuid(), "Test", 10, -1);
@@ -40,7 +43,10 @@ public class ProductTests
         product.UnitPrice.Should().Be(20);
 
         var act = () => product.UpdatePrice(-1);
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<ArgumentException>().WithMessage("Preço deve ser maior que zero.");
+
+        var actZero = () => product.UpdatePrice(0);
+        actZero.Should().Throw<ArgumentException>().WithMessage("Preço deve ser maior que zero.");
     }
 
     [Fact]

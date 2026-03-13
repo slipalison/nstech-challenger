@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NsTech.Domain.Entities;
 using NsTech.Domain.Interfaces;
 using NsTech.Infrastructure.Data;
@@ -9,6 +9,11 @@ public class ProductRepository(AppDbContext context) : IProductRepository
 {
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         => await context.Products.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<Order?> GetByIdempotencyKeyAsync(string key, CancellationToken cancellationToken)
+        => await context.Orders
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.IdempotencyKey == key, cancellationToken);
 
     public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken)
         => await context.Products.ToListAsync(cancellationToken);
@@ -29,6 +34,11 @@ public class OrderRepository(AppDbContext context) : IOrderRepository
         => await context.Orders
             .Include(x => x.Items)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<Order?> GetByIdempotencyKeyAsync(string key, CancellationToken cancellationToken)
+        => await context.Orders
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.IdempotencyKey == key, cancellationToken);
 
     public async Task<(IEnumerable<Order> Items, int TotalCount)> ListAsync(
         string? customerId, 

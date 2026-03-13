@@ -3,7 +3,9 @@ using Moq;
 using NsTech.Application.Features.Orders.CancelOrder;
 using NsTech.Domain.Entities;
 using NsTech.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using NsTech.Domain.Enums;
+using Xunit;
 
 namespace NsTech.Tests.Application;
 
@@ -60,5 +62,28 @@ public class CancelOrderHandlerTests
         result.Should().BeTrue();
         order.Status.Should().Be(OrderStatus.Canceled);
         _productRepoMock.Verify(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenConcurrencyOccursAndOrderIsCanceled_ShouldReturnTrue()
+    {
+        // Arrange
+        var order = new Order(Guid.NewGuid(), "cust-1", "BRL", [new OrderItem(Guid.NewGuid(), 100, 1)]);
+
+        _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+
+        var canceledOrder = new Order(order.Id, "cust-1", "BRL", [new OrderItem(Guid.NewGuid(), 100, 1)]);
+        canceledOrder.Cancel();
+
+        _orderRepoMock.SetupSequence(x => x.GetByIdAsync(order.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order)         // Inicial
+            .ReturnsAsync(canceledOrder); // No catch
+
+        // Act
+        var result = await _handler.Handle(new CancelOrderCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        result.Should().BeTrue();
     }
 }

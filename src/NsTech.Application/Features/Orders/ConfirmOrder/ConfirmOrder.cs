@@ -40,9 +40,12 @@ public class ConfirmOrderHandler(
         }
         catch (DbUpdateConcurrencyException)
         {
-            // O desafio sugere retornar 409 Conflict em caso de controle otimista.
-            // Vou relançar para ser tratado no middleware global ou na API.
-            throw new InvalidOperationException("Conflito de concorrência ao reservar estoque. Tente novamente.");
+            // Em caso de concorrência, verificamos se o pedido já está no estado desejado
+            var reloadedOrder = await orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+            if (reloadedOrder?.Status == OrderStatus.Confirmed)
+                return true; // Idempotência concorrente: outra instância já confirmou
+
+            throw new InvalidOperationException("Conflito de concorrência ao confirmar pedido. Tente novamente.");
         }
 
         return true;

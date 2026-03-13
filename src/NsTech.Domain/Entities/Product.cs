@@ -14,7 +14,7 @@ public class Product
     public Product(Guid id, string name, decimal unitPrice, int availableQuantity)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Nome não pode ser vazio.");
-        if (unitPrice < 0) throw new ArgumentException("Preço não pode ser negativo.");
+        if (unitPrice <= 0) throw new ArgumentException("Preço deve ser maior que zero.");
         if (availableQuantity < 0) throw new ArgumentException("Quantidade não pode ser negativa.");
 
         Id = id;
@@ -31,7 +31,7 @@ public class Product
 
     public void UpdatePrice(decimal unitPrice)
     {
-        if (unitPrice < 0) throw new ArgumentException("Preço não pode ser negativo.");
+        if (unitPrice <= 0) throw new ArgumentException("Preço deve ser maior que zero.");
         UnitPrice = unitPrice;
     }
 

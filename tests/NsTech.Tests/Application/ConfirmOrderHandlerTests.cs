@@ -3,7 +3,9 @@ using Moq;
 using NsTech.Application.Features.Orders.ConfirmOrder;
 using NsTech.Domain.Entities;
 using NsTech.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using NsTech.Domain.Enums;
+using Xunit;
 
 namespace NsTech.Tests.Application;
 
@@ -59,5 +61,68 @@ public class ConfirmOrderHandlerTests
         // Assert
         result.Should().BeTrue();
         _productRepoMock.Verify(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenConcurrencyOccursAndOrderIsConfirmed_ShouldReturnTrue()
+    {
+        // Arrange
+        var productId = Guid.NewGuid();
+        var product = new Product(productId, "Test Product", 100, 10);
+        var item = new OrderItem(productId, 100, 2);
+        var order = new Order(Guid.NewGuid(), "cust-1", "BRL", [item]);
+
+        _orderRepoMock.Setup(x => x.GetByIdAsync(order.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        _productRepoMock.Setup(x => x.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product);
+
+        _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+
+        // Simula que ao recarregar, o pedido já está confirmado por outra instância
+        var confirmedOrder = new Order(order.Id, "cust-1", "BRL", [item]);
+        confirmedOrder.Confirm();
+        _orderRepoMock.SetupSequence(x => x.GetByIdAsync(order.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order)         // Primeira chamada no Handle
+            .ReturnsAsync(confirmedOrder); // Chamada no catch do DbUpdateConcurrencyException
+
+        // Act
+        var result = await _handler.Handle(new ConfirmOrderCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        result.Should().BeTrue();
+        _orderRepoMock.Verify(x => x.GetByIdAsync(order.Id, It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Handle_WhenConcurrencyOccursAndOrderNotConfirmed_ShouldThrow()
+    {
+        // Arrange
+        var productId = Guid.NewGuid();
+        var product = new Product(productId, "Test Product", 100, 10);
+        var item = new OrderItem(productId, 100, 2);
+        var order = new Order(Guid.NewGuid(), "cust-1", "BRL", [item]);
+
+        // Simula que ao recarregar, o pedido continua como PLACED
+        // Nota: O objeto order deve ter Status == Placed
+        var sameOrder = new Order(order.Id, "cust-1", "BRL", [item]);
+        
+        _orderRepoMock.SetupSequence(x => x.GetByIdAsync(order.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order)      // Chamada 1: Get inicial no Handle
+            .ReturnsAsync(sameOrder);  // Chamada 2: Get no catch
+
+        _productRepoMock.Setup(x => x.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product);
+
+        _uowMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+
+        // Act
+        var act = () => _handler.Handle(new ConfirmOrderCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Conflito de concorrência ao confirmar pedido. Tente novamente.");
     }
 }
