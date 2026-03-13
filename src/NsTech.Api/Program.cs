@@ -6,6 +6,7 @@ using NsTech.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using NsTech.Api.Endpoints;
+using NsTech.Api.Common.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
