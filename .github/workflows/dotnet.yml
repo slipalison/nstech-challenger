@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,19 +33,29 @@ jobs:
       run: dotnet test --configuration Release --no-restore --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory ./TestResults
 
     - name: Mutation Test
+      shell: bash
       run: |
+        set -o pipefail
         dotnet stryker --configuration Release | tee stryker.log
         if grep -q "The final mutation score is NaN%" stryker.log; then
           echo "Mutation score is NaN%. Check if mutants are being generated."
           exit 1
         fi
 
+    - name: Debug Output
+      if: always()
+      run: |
+        echo "Checking for Stryker output folder..."
+        ls -R StrykerOutput || echo "StrykerOutput folder not found."
+
     - name: Mutation Summary
       if: always()
       run: |
-        REPORT_PATH=$(find StrykerOutput -name "mutation-report.md" | head -n 1)
-        if [ -n "$REPORT_PATH" ]; then
-          cat "$REPORT_PATH" >> $GITHUB_STEP_SUMMARY
+        if [ -d "StrykerOutput" ]; then
+          REPORT_PATH=$(find StrykerOutput -name "mutation-report.md" | head -n 1)
+          if [ -n "$REPORT_PATH" ]; then
+            cat "$REPORT_PATH" >> $GITHUB_STEP_SUMMARY
+          fi
         fi
 
     - name: Upload Mutation Report
@@ -51,6 +64,7 @@ jobs:
       with:
         name: mutation-report
         path: StrykerOutput/
+        if-no-files-found: warn
 
     - name: Check Coverage
       uses: irongut/CodeCoverageSummary@v1.3.0

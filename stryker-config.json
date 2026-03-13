@@ -11,7 +11,7 @@
     "cleartext",
     "progress",
     "html",
-    "Markdown"
+    "markdown"
   ],
   "thresholds": {
     "high": 80,
