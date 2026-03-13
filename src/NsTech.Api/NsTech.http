@@ -1,0 +1,137 @@
+﻿@Host = http://localhost:8080
+@Username = admin
+@Password = admin
+
+### 1. Authenticate to get JWT Token
+# @name authenticate
+POST {{Host}}/auth/token?username={{Username}}&password={{Password}}
+Content-Type: application/json
+
+> {%
+    client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+    client.global.set("Token", response.body.token);
+%}
+
+### 2. List Products
+# @name listProducts
+GET {{Host}}/products
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+    // Set first product ID for later use
+    if (response.body.length > 0) {
+        client.global.set("productId", response.body[0].id);
+    }
+%}
+
+### 3. Create Product
+POST {{Host}}/products
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "name": "Novo Produto HTTP",
+  "price": 99.99,
+  "stock": 100
+}
+
+> {%
+    client.test("Product created successfully", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### 4. Create Order
+# @name createOrder
+POST {{Host}}/orders
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "customerId": "Customer_001",
+  "currency": "BRL",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 2
+    }
+  ]
+}
+
+> {%
+    client.test("Order created successfully", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+    client.global.set("orderId", response.body.id);
+%}
+
+### 5. Get Order Details
+GET {{Host}}/orders/{{orderId}}
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+### 6. List Orders
+GET {{Host}}/orders?pageSize=10&page=1
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+### 7. Confirm Order - Idempotency Validation (Part 1)
+# @name confirmOrder1
+POST {{Host}}/orders/{{orderId}}/confirm
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("First confirmation executed successfully", function() {
+        client.assert(response.status === 204, "Response status is not 204 on first call");
+    });
+%}
+
+### 8. Confirm Order - Idempotency Validation (Part 2)
+# Re-confirming same order. Should still return 204 success without error.
+# @name confirmOrder2
+POST {{Host}}/orders/{{orderId}}/confirm
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("Idempotent second confirmation executed successfully", function() {
+        client.assert(response.status === 204, "Response status is not 204 on second call (idempotency check)");
+    });
+%}
+
+### 9. Cancel Order - Idempotency Validation (Part 1)
+# @name cancelOrder1
+POST {{Host}}/orders/{{orderId}}/cancel
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("First cancellation executed successfully", function() {
+        client.assert(response.status === 204, "Response status is not 204 on first call");
+    });
+%}
+
+### 10. Cancel Order - Idempotency Validation (Part 2)
+# Re-canceling same order. Should still return 204 success without error.
+# @name cancelOrder2
+POST {{Host}}/orders/{{orderId}}/cancel
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("Idempotent second cancellation executed successfully", function() {
+        client.assert(response.status === 204, "Response status is not 204 on second call (idempotency check)");
+    });
+%}

@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="CHALENGER.md" />
+    <File Path="docker-compose.yml" />
+    <File Path="dotnet-tools.json" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/NsTech.Api/NsTech.Api.csproj" />
+    <Project Path="src/NsTech.Application/NsTech.Application.csproj" />
+    <Project Path="src/NsTech.Domain/NsTech.Domain.csproj" />
+    <Project Path="src/NsTech.Infrastructure/NsTech.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NsTech.Tests/NsTech.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,26 @@
+﻿version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: nstech_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nstech_db
+    ports:
+      - "5432:5432"
+
+  api:
+    image: nstech-api
+    build:
+      context: .
+      dockerfile: src/NsTech.Api/Dockerfile
+    container_name: nstech_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Database=nstech_db;Username=postgres;Password=postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db

@@ -368,7 +368,7 @@ ASALocalRun/
 # MSBuild Binary and Structured Log
 *.binlog
 MSBuild_Logs/
-
+.idea
 # AWS SAM Build and Temporary Artifacts folder
 .aws-sam
 
