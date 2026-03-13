@@ -1,4 +1,5 @@
-﻿using MediatR;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using NsTech.Application.Features.Orders.CancelOrder;
 using NsTech.Application.Features.Orders.ConfirmOrder;
 using NsTech.Application.Features.Orders.CreateOrder;
@@ -13,17 +14,15 @@ public static class OrderEndpoints
     {
         var orders = app.MapGroup("/orders").RequireAuthorization();
 
-        orders.MapPost("/", CreateOrder);
+        orders.MapPost("/", async (CreateOrderCommand command, IMediator mediator) =>
+        {
+            var id = await mediator.Send(command);
+            return Results.Created($"/orders/{id}", new { id });
+        });
         orders.MapPost("/{id:guid}/confirm", ConfirmOrder);
         orders.MapPost("/{id:guid}/cancel", CancelOrder);
         orders.MapGet("/{id:guid}", GetOrder);
         orders.MapGet("/", ListOrders);
-    }
-
-    private static async Task<IResult> CreateOrder(CreateOrderCommand command, IMediator mediator)
-    {
-        var id = await mediator.Send(command);
-        return Results.Created($"/orders/{id}", new { id });
     }
 
     private static async Task<IResult> ConfirmOrder(Guid id, IMediator mediator)
@@ -33,7 +32,7 @@ public static class OrderEndpoints
             await mediator.Send(new ConfirmOrderCommand(id));
             return Results.NoContent();
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("concorrência"))
+        catch (InvalidOperationException ex) when (ex.Message.Contains("concorr�ncia"))
         {
             return Results.Conflict(new { error = ex.Message });
         }

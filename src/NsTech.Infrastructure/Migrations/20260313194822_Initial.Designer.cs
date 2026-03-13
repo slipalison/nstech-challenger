@@ -12,8 +12,8 @@ using NsTech.Infrastructure.Data;
 namespace NsTech.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260313183911_AddOrderConcurrencyVersion")]
-    partial class AddOrderConcurrencyVersion
+    [Migration("20260313194822_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,8 +42,10 @@ namespace NsTech.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<decimal>("Total")
                         .HasPrecision(18, 2)

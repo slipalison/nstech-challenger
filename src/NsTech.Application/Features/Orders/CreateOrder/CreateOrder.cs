@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using NsTech.Domain.Entities;
 using NsTech.Domain.Interfaces;
 
@@ -20,7 +20,7 @@ public class CreateOrderHandler(
         {
             var product = await productRepository.GetByIdAsync(itemRequest.ProductId, cancellationToken);
             if (product == null)
-                throw new KeyNotFoundException($"Produto {itemRequest.ProductId} não encontrado.");
+                throw new KeyNotFoundException($"Produto {itemRequest.ProductId} n�o encontrado.");
 
             if (product.AvailableQuantity < itemRequest.Quantity)
                 throw new InvalidOperationException($"Estoque insuficiente para o produto {product.Id}.");

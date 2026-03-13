@@ -1,4 +1,5 @@
 using NsTech.Domain.Entities;
+using NsTech.Domain.Enums;
 
 namespace NsTech.Domain.Interfaces;
 
@@ -14,10 +15,9 @@ public interface IProductRepository
 public interface IOrderRepository
 {
     Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-    Task<Order?> GetByIdempotencyKeyAsync(string key, CancellationToken cancellationToken);
     Task<(IEnumerable<Order> Items, int TotalCount)> ListAsync(
         string? customerId, 
-        int? status, 
+        OrderStatus? status, 
         DateTime? from, 
         DateTime? to, 
         int page, 

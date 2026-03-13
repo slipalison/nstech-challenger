@@ -2,6 +2,7 @@
 using Moq;
 using NsTech.Application.Features.Orders.ListOrders;
 using NsTech.Domain.Entities;
+using NsTech.Domain.Enums;
 using NsTech.Domain.Interfaces;
 
 namespace NsTech.Tests.Application;
@@ -27,7 +28,7 @@ public class ListOrdersHandlerTests
         };
 
         _orderRepoMock.Setup(x => x.ListAsync(
-            It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), 
+            It.IsAny<string>(), It.IsAny<OrderStatus?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), 
             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((orders, 2));
 

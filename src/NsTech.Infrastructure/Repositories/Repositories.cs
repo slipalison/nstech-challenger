@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NsTech.Domain.Entities;
+using NsTech.Domain.Enums;
 using NsTech.Domain.Interfaces;
 using NsTech.Infrastructure.Data;
 
@@ -9,11 +10,6 @@ public class ProductRepository(AppDbContext context) : IProductRepository
 {
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         => await context.Products.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-    public async Task<Order?> GetByIdempotencyKeyAsync(string key, CancellationToken cancellationToken)
-        => await context.Orders
-            .Include(x => x.Items)
-            .FirstOrDefaultAsync(x => x.IdempotencyKey == key, cancellationToken);
 
     public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken)
         => await context.Products.ToListAsync(cancellationToken);
@@ -35,14 +31,9 @@ public class OrderRepository(AppDbContext context) : IOrderRepository
             .Include(x => x.Items)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    public async Task<Order?> GetByIdempotencyKeyAsync(string key, CancellationToken cancellationToken)
-        => await context.Orders
-            .Include(x => x.Items)
-            .FirstOrDefaultAsync(x => x.IdempotencyKey == key, cancellationToken);
-
     public async Task<(IEnumerable<Order> Items, int TotalCount)> ListAsync(
         string? customerId, 
-        int? status, 
+        OrderStatus? status, 
         DateTime? from, 
         DateTime? to, 
         int page, 
@@ -55,7 +46,7 @@ public class OrderRepository(AppDbContext context) : IOrderRepository
             query = query.Where(x => x.CustomerId == customerId);
 
         if (status.HasValue)
-            query = query.Where(x => (int)x.Status == status.Value);
+            query = query.Where(x => x.Status == status.Value);
 
         if (from.HasValue)
             query = query.Where(x => x.CreatedAt >= from.Value);

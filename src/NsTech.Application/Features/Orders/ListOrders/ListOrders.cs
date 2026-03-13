@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using NsTech.Domain.Interfaces;
 using NsTech.Application.Features.Orders.GetOrder;
+using NsTech.Domain.Enums;
 
 namespace NsTech.Application.Features.Orders.ListOrders;
 
@@ -8,7 +9,7 @@ public record ListOrdersResponse(IEnumerable<OrderResponse> Items, int TotalCoun
 
 public record ListOrdersQuery(
     string? CustomerId = null,
-    int? Status = null,
+    OrderStatus? Status = null,
     DateTime? From = null,
     DateTime? To = null,
     int Page = 1,
