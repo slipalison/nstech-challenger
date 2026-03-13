@@ -35,14 +35,33 @@ Authorization: Bearer {{Token}}
 Content-Type: application/json
 
 {
+  "id": "550e8400-e29b-41d4-a716-446655440000",
   "name": "Novo Produto HTTP",
   "unitPrice": 99.99,
-  "AvailableQuantity": 100
+  "availableQuantity": 100
 }
 
 > {%
     client.test("Product created successfully", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201 || response.status === 400, "Should return 201 or 400 (if already exists)");
+    });
+%}
+
+### 3a. Create Product - Invalid Price (0)
+POST {{Host}}/products
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "name": "Produto Grátis",
+  "unitPrice": 0,
+  "availableQuantity": 100
+}
+
+> {%
+    client.test("Product creation failed as expected (Price 0)", function() {
+        client.assert(response.status === 400, "Should return 400 for price 0");
     });
 %}
 
@@ -65,9 +84,92 @@ Content-Type: application/json
 
 > {%
     client.test("Order created successfully", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Response status is not 201. Body: " + JSON.stringify(response.body));
     });
     client.global.set("orderId", response.body.id);
+%}
+
+### 4a. Create Order - No Items
+POST {{Host}}/orders
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "customerId": "Customer_001",
+  "currency": "BRL",
+  "items": []
+}
+
+> {%
+    client.test("Order creation failed as expected (No items)", function() {
+        client.assert(response.status === 400, "Should return 400 for no items");
+    });
+%}
+
+### 4b. Create Order - Quantity Zero
+POST {{Host}}/orders
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "customerId": "Customer_001",
+  "currency": "BRL",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 0
+    }
+  ]
+}
+
+> {%
+    client.test("Order creation failed as expected (Quantity 0)", function() {
+        client.assert(response.status === 400, "Should return 400 for quantity 0");
+    });
+%}
+
+### 4c. Create Order - Product Does Not Exist
+POST {{Host}}/orders
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "customerId": "Customer_001",
+  "currency": "BRL",
+  "items": [
+    {
+      "productId": "00000000-0000-0000-0000-000000000000",
+      "quantity": 1
+    }
+  ]
+}
+
+> {%
+    client.test("Order creation failed as expected (Invalid product)", function() {
+        client.assert(response.status === 400, "Should return 400 for invalid product");
+    });
+%}
+
+### 4d. Create Order - Insufficient Stock
+POST {{Host}}/orders
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "customerId": "Customer_001",
+  "currency": "BRL",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 99999
+    }
+  ]
+}
+
+> {%
+    client.test("Order creation failed as expected (Insufficient stock)", function() {
+        client.assert(response.status === 400, "Should return 400 for insufficient stock");
+    });
 %}
 
 ### 5. Get Order Details
@@ -86,6 +188,16 @@ Authorization: Bearer {{Token}}
 
 > {%
     client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+### 6a. List Orders with Filters
+GET {{Host}}/orders?customerId=Customer_001&status=Placed&from=2024-01-01T00:00:00Z&to=2027-12-31T23:59:59Z&page=1&pageSize=10
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("Filtered request executed successfully", function() {
         client.assert(response.status === 200, "Response status is not 200");
     });
 %}
@@ -133,5 +245,17 @@ Authorization: Bearer {{Token}}
 > {%
     client.test("Idempotent second cancellation executed successfully", function() {
         client.assert(response.status === 204, "Response status is not 204 on second call (idempotency check)");
+    });
+%}
+
+### 11. Confirm Order - Canceled Order (Part 3 - Should Fail)
+# Confirmation should fail for a canceled order
+# @name confirmOrderFail
+POST {{Host}}/orders/{{orderId}}/confirm
+Authorization: Bearer {{Token}}
+
+> {%
+    client.test("Confirmation failed as expected (Order Canceled)", function() {
+        client.assert(response.status === 400, "Should return 400 for canceled order");
     });
 %}

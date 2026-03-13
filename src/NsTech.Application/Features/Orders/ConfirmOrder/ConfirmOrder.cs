@@ -2,6 +2,7 @@
 using NsTech.Domain.Interfaces;
 using NsTech.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using NsTech.Domain.Exceptions;
 
 namespace NsTech.Application.Features.Orders.ConfirmOrder;
 
@@ -16,7 +17,7 @@ public class ConfirmOrderHandler(
     {
         var order = await orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
         if (order == null)
-            throw new KeyNotFoundException($"Pedido {request.OrderId} não encontrado.");
+            throw new ResourceNotFoundException($"Pedido {request.OrderId} não encontrado.");
 
         if (order.Status == OrderStatus.Confirmed)
             return true; // Idempotente

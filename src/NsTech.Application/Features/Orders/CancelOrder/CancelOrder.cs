@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using NsTech.Domain.Interfaces;
 using NsTech.Domain.Enums;
+using NsTech.Domain.Exceptions;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +18,7 @@ public class CancelOrderHandler(
     {
         var order = await orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
         if (order == null)
-            throw new KeyNotFoundException($"Pedido {request.OrderId} não encontrado.");
+            throw new ResourceNotFoundException($"Pedido {request.OrderId} não encontrado.");
 
         if (order.Status == OrderStatus.Canceled)
             return true; // Idempotente

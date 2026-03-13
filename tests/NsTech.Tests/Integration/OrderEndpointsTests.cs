@@ -1,4 +1,6 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 using NsTech.Application.Features.Orders.CreateOrder;
 using NsTech.Application.Features.Orders.GetOrder;
@@ -9,10 +11,16 @@ namespace NsTech.Tests.Integration;
 public class OrderEndpointsTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
 
     public OrderEndpointsTests(CustomWebApplicationFactory<Program> factory)
     {
         _client = factory.CreateClient();
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
     }
 
     private async Task<string> GetAuthTokenAsync()
@@ -47,7 +55,7 @@ public class OrderEndpointsTests : IClassFixture<CustomWebApplicationFactory<Pro
         // 4. Get Order
         var getOrderResponse = await _client.GetAsync($"/orders/{orderId}");
         getOrderResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
-        var order = await getOrderResponse.Content.ReadFromJsonAsync<OrderResponse>();
+        var order = await getOrderResponse.Content.ReadFromJsonAsync<OrderResponse>(_jsonOptions);
         order!.Status.ToString().Should().Be("Placed");
 
         // 5. Confirm Order

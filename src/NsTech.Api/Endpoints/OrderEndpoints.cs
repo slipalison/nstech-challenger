@@ -93,7 +93,7 @@ public static class OrderEndpoints
             await mediator.Send(new ConfirmOrderCommand(id));
             return Results.NoContent();
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("concorr�ncia"))
+        catch (InvalidOperationException ex) when (ex.Message.Contains("concorr", StringComparison.OrdinalIgnoreCase))
         {
             return Results.Conflict(new { error = ex.Message });
         }
@@ -101,8 +101,15 @@ public static class OrderEndpoints
 
     private static async Task<IResult> CancelOrder(Guid id, IMediator mediator)
     {
-        await mediator.Send(new CancelOrderCommand(id));
-        return Results.NoContent();
+        try
+        {
+            await mediator.Send(new CancelOrderCommand(id));
+            return Results.NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("concorr", StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.Conflict(new { error = ex.Message });
+        }
     }
 
     private static async Task<IResult> GetOrder(Guid id, IMediator mediator)

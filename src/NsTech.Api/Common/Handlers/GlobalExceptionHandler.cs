@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using NsTech.Domain.Exceptions;
 
 namespace NsTech.Api.Common.Handlers;
 
@@ -23,11 +24,18 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
                 Detail = "One or more validation errors occurred.",
                 Extensions = { ["errors"] = validationException.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }) }
             },
-            KeyNotFoundException keyNotFoundException => new ProblemDetails
+            ResourceNotFoundException resourceNotFoundException => new ProblemDetails
             {
                 Status = StatusCodes.Status404NotFound,
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
                 Title = "Resource Not Found",
+                Detail = resourceNotFoundException.Message
+            },
+            KeyNotFoundException keyNotFoundException => new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                Title = "Validation Error",
                 Detail = keyNotFoundException.Message
             },
             InvalidOperationException invalidOperationException => new ProblemDetails

@@ -43,7 +43,7 @@ public class Order
         if (Status == OrderStatus.Confirmed) return; // Idempotente
         
         if (Status != OrderStatus.Placed)
-            throw new InvalidOperationException($"Não é possóvel confirmar um pedido no estado {Status}.");
+            throw new InvalidOperationException($"Não é possível confirmar um pedido no estado {Status}.");
 
         Status = OrderStatus.Confirmed;
     }

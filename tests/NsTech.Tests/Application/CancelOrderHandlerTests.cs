@@ -5,6 +5,7 @@ using NsTech.Domain.Entities;
 using NsTech.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NsTech.Domain.Enums;
+using NsTech.Domain.Exceptions;
 
 namespace NsTech.Tests.Application;
 
@@ -18,6 +19,22 @@ public class CancelOrderHandlerTests
     public CancelOrderHandlerTests()
     {
         _handler = new CancelOrderHandler(_orderRepoMock.Object, _productRepoMock.Object, _uowMock.Object);
+    }
+
+    [Fact]
+    public async Task Handle_WhenOrderDoesNotExist_ShouldThrowResourceNotFoundException()
+    {
+        // Arrange
+        var orderId = Guid.NewGuid();
+        _orderRepoMock.Setup(x => x.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Order?)null);
+
+        // Act
+        var act = () => _handler.Handle(new CancelOrderCommand(orderId), CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<ResourceNotFoundException>()
+            .WithMessage($"Pedido {orderId} não encontrado.");
     }
 
     [Fact]

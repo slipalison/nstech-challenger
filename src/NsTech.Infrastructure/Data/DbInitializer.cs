@@ -6,7 +6,11 @@ public static class DbInitializer
 {
     public static void Seed(AppDbContext context)
     {
-        if (context.Products.Any()) return;
+        // Limpa as tabelas antes do seed para garantir um ambiente limpo em desenvolvimento
+        context.OrderItems.RemoveRange(context.OrderItems);
+        context.Orders.RemoveRange(context.Orders);
+        context.Products.RemoveRange(context.Products);
+        context.SaveChanges();
 
         var products = new List<Product>();
         for (int i = 1; i <= 10; i++)
